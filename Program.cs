@@ -1,6 +1,6 @@
 ﻿using System;
 
-// Интерфейс для генерации числа
+// Интерфейс для генерации числа.
 public interface INumberGenerator
 {
     int Generate(int min, int max);
