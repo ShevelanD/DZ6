@@ -1,6 +1,7 @@
 ﻿using System;
+using System.IO;
 
-// Интерфейс для генерации числа.
+// Интерфейс для генерации числа
 public interface INumberGenerator
 {
     int Generate(int min, int max);
@@ -40,11 +41,21 @@ public class GameSettings : IGameSettings
     }
 }
 
-// Интерфейс для взаимодействия с пользователем
-public interface IUserInterface
+// Интерфейс для получения ввода
+public interface IInputProvider
 {
     int GetUserGuess();
+}
+
+// Интерфейс для вывода сообщений
+public interface IOutputProvider
+{
     void ShowMessage(string message);
+}
+
+// Обновленный интерфейс IUserInterface
+public interface IUserInterface : IInputProvider, IOutputProvider
+{
 }
 
 // Реализация консольного интерфейса
@@ -59,6 +70,28 @@ public class ConsoleUserInterface : IUserInterface
     public void ShowMessage(string message)
     {
         Console.WriteLine(message);
+    }
+}
+
+// Реализация файлового интерфейса
+public class FileUserInterface : IUserInterface
+{
+    private readonly string _filePath;
+
+    public FileUserInterface(string filePath)
+    {
+        _filePath = filePath;
+    }
+
+    public int GetUserGuess()
+    {
+        string input = File.ReadAllText(_filePath);
+        return int.Parse(input);
+    }
+
+    public void ShowMessage(string message)
+    {
+        File.AppendAllText(_filePath, message + Environment.NewLine);
     }
 }
 
@@ -102,22 +135,25 @@ public class Game
     }
 }
 
+// Фабрика для создания игры
+public static class GameFactory
+{
+    public static Game CreateGame(IUserInterface userInterface)
+    {
+        var settings = new GameSettings(1, 100, 5);
+        var numberGenerator = new RandomNumberGenerator();
+        return new Game(numberGenerator, settings, userInterface);
+    }
+}
+
 // Основная программа
 class Program
 {
     static void Main(string[] args)
     {
-        // Настройки игры
-        var settings = new GameSettings(1, 100, 5);
-
-        // Генератор чисел
-        var numberGenerator = new RandomNumberGenerator();
-
-        // Интерфейс пользователя
+        // Использование фабрики
         var userInterface = new ConsoleUserInterface();
-
-        // Игра
-        var game = new Game(numberGenerator, settings, userInterface);
+        var game = GameFactory.CreateGame(userInterface);
         game.Play();
     }
 }
